@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIR Engine — Semantic Code Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #050810;
+      --surface:  #0d1117;
+      --border:   #1c2333;
+      --accent:   #00ff88;
+      --accent2:  #0088ff;
+      --danger:   #ff4455;
+      --text:     #e8eaf0;
+      --muted:    #6b7280;
+      --mono:     'Space Mono', monospace;
+      --sans:     'Syne', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      overflow-x: hidden;
+      cursor: crosshair;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.4;
+    }
+
+    /* ── GRID BACKGROUND ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5, 8, 16, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--accent); }
+
+    .nav-cta {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 0.5rem 1.25rem;
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: opacity 0.2s;
+    }
+
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8rem 2rem 4rem;
+      text-align: center;
+      z-index: 1;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid rgba(0,255,136,0.3);
+      padding: 0.4rem 1rem;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .hero-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 7rem);
+      font-weight: 800;
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero-title .line-accent { color: var(--accent); }
+    .hero-title .line-dim { color: var(--muted); }
+
+    .hero-sub {
+      font-family: var(--mono);
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      color: var(--muted);
+      max-width: 540px;
+      line-height: 1.8;
+      margin-bottom: 3rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-sub strong { color: var(--text); }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 0.9rem 2rem;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 0 30px rgba(0,255,136,0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 50px rgba(0,255,136,0.4);
+    }
+
+    .btn-secondary {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text);
+      background: transparent;
+      padding: 0.9rem 2rem;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── STAT BAR ── */
+    .stat-bar {
+      margin-top: 4rem;
+      display: flex;
+      gap: 3rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── CODE DEMO ── */
+    .demo-section {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-sub {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 500px;
+      margin-bottom: 3rem;
+    }
+
+    .code-compare {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      position: relative;
+    }
+
+    .code-block-lang {
+      position: absolute;
+      top: -1px; right: -1px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.3rem 0.75rem;
+      background: var(--border);
+      color: var(--muted);
+    }
+
+    .code-block pre {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.7;
+      color: var(--text);
+      overflow-x: auto;
+    }
+
+    .kw { color: #ff79c6; }
+    .fn { color: #50fa7b; }
+    .var { color: #8be9fd; }
+    .num { color: #bd93f9; }
+    .cm { color: var(--muted); font-style: italic; }
+
+    .equals-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .equals-icon {
+      width: 48px; height: 48px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 1.2rem;
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(0,255,136,0.3);
+    }
+
+    .hash-match {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      text-align: center;
+      max-width: 120px;
+      word-break: break-all;
+      opacity: 0.7;
+    }
+
+    /* ── FEATURES ── */
+    .features-section {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      padding: 2rem;
+      transition: background 0.2s;
+    }
+
+    .feature-card:hover { background: #111827; }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .feature-desc {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .how-section {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+      counter-reset: steps;
+    }
+
+    .step {
+      counter-increment: steps;
+      position: relative;
+      padding-left: 1.5rem;
+      border-left: 2px solid var(--border);
+      transition: border-color 0.2s;
+    }
+
+    .step:hover { border-left-color: var(--accent); }
+
+    .step::before {
+      content: "0" counter(steps);
+      position: absolute;
+      top: 0; left: -1px;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--accent);
+      background: var(--bg);
+      padding: 0 0.5rem 0.25rem;
+      letter-spacing: 0.1em;
+    }
+
+    .step-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .step-desc {
+      font-family: var(--mono);
+      font-size: 0.73rem;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    /* ── LANGUAGES ── */
+    .langs-section {
+      position: relative;
+      z-index: 1;
+      padding: 4rem 2rem;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .langs-scroll {
+      display: flex;
+      gap: 2rem;
+      animation: scroll 30s linear infinite;
+      white-space: nowrap;
+    }
+
+    .langs-scroll:hover { animation-play-state: paused; }
+
+    @keyframes scroll {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    .lang-pill {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.4rem 1rem;
+      flex-shrink: 0;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .lang-pill:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      padding: 8rem 2rem;
+      text-align: center;
+    }
+
+    .cta-box {
+      max-width: 600px;
+      margin: 0 auto;
+      border: 1px solid var(--border);
+      padding: 4rem;
+      background: var(--surface);
+      position: relative;
+    }
+
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      background: linear-gradient(135deg, rgba(0,255,136,0.15), transparent 50%, rgba(0,136,255,0.1));
+      pointer-events: none;
+    }
+
+    .cta-title {
+      font-size: clamp(1.5rem, 3vw, 2.5rem);
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .cta-sub {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 2.5rem;
+    }
+
+    .cta-links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── GLOW ORBS ── */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .orb-1 {
+      width: 400px; height: 400px;
+      background: rgba(0,255,136,0.06);
+      top: -100px; left: -100px;
+    }
+
+    .orb-2 {
+      width: 300px; height: 300px;
+      background: rgba(0,136,255,0.05);
+      bottom: 20%; right: -50px;
+    }
+
+    /* ── TERMINAL BLOCK ── */
+    .terminal {
+      background: #000;
+      border: 1px solid var(--border);
+      margin-top: 3rem;
+      max-width: 600px;
+    }
+
+    .terminal-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .terminal-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot:nth-child(1) { background: #ff5f57; }
+    .terminal-dot:nth-child(2) { background: #febc2e; }
+    .terminal-dot:nth-child(3) { background: #28c840; }
+
+    .terminal-title {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+
+    .terminal-body {
+      padding: 1.25rem 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 2;
+    }
+
+    .t-prompt { color: var(--accent); }
+    .t-cmd { color: var(--text); }
+    .t-out { color: var(--muted); }
+    .t-match { color: var(--accent); }
+    .t-warn { color: var(--danger); }
+
+    /* responsive */
+    @media (max-width: 700px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-links { display: none; }
+      .code-compare { grid-template-columns: 1fr; }
+      .equals-badge { flex-direction: row; }
+      .cta-box { padding: 2rem 1.5rem; }
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="nav-logo">SIR_ENGINE</a>
+    <ul class="nav-links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="https://github.com/lflin00/SIR-ENGINE" target="_blank">GitHub</a></li>
+    </ul>
+    <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="nav-cta">Live Demo →</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">v1.0 — Open Source</div>
+    <h1 class="hero-title">
+      <span class="line-dim">Code that</span><br>
+      <span class="line-accent">thinks the same</span><br>
+      <span class="line-dim">is the same.</span>
+    </h1>
+    <p class="hero-sub">
+      SIR Engine detects when two functions implement <strong>identical logic</strong> —
+      regardless of language, variable names, or formatting.
+      A Java function and a Python function that do the same thing
+      produce the same hash.
+    </p>
+    <div class="hero-actions">
+      <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="btn-primary">Try the demo</a>
+      <a href="https://github.com/lflin00/SIR-ENGINE" target="_blank" class="btn-secondary">View on GitHub</a>
+    </div>
+    <div class="stat-bar">
+      <div class="stat">
+        <span class="stat-num">25+</span>
+        <span class="stat-label">Languages</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">113+</span>
+        <span class="stat-label">Cloners day 1</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">100%</span>
+        <span class="stat-label">Open source</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">α≡</span>
+        <span class="stat-label">Alpha equiv.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE DEMO -->
+  <section class="demo-section reveal" id="demo">
+    <div class="section-label">// Cross-language detection</div>
+    <h2 class="section-title">Same logic.<br>Different language.</h2>
+    <p class="section-sub">
+      Strip variable names. Strip formatting. Hash what's left.
+      Two functions with matching hashes are structurally identical —
+      no matter what language they're written in.
+    </p>
+
+    <div class="code-compare">
+      <div class="code-block">
+        <span class="code-block-lang">Java</span>
+        <pre><span class="kw">int</span> <span class="fn">findMax</span>(<span class="kw">int</span>[] <span class="var">arr</span>) {
+  <span class="kw">int</span> <span class="var">max</span> = <span class="var">arr</span>[<span class="num">0</span>];
+  <span class="kw">for</span> (<span class="kw">int</span> <span class="var">n</span> : <span class="var">arr</span>) {
+    <span class="kw">if</span> (<span class="var">n</span> > <span class="var">max</span>)
+      <span class="var">max</span> = <span class="var">n</span>;
+  }
+  <span class="kw">return</span> <span class="var">max</span>;
+}</pre>
+      </div>
+
+      <div class="equals-badge">
+        <div class="equals-icon">=</div>
+        <div class="hash-match">a3f72c8b<br>a3f72c8b</div>
+      </div>
+
+      <div class="code-block">
+        <span class="code-block-lang">Python</span>
+        <pre><span class="kw">def</span> <span class="fn">get_largest</span>(<span class="var">items</span>):
+  <span class="var">biggest</span> = <span class="var">items</span>[<span class="num">0</span>]
+  <span class="kw">for</span> <span class="var">n</span> <span class="kw">in</span> <span class="var">items</span>:
+    <span class="kw">if</span> <span class="var">n</span> > <span class="var">biggest</span>:
+      <span class="var">biggest</span> = <span class="var">n</span>
+  <span class="kw">return</span> <span class="var">biggest</span></pre>
+      </div>
+    </div>
+
+    <!-- TERMINAL -->
+    <div class="terminal reveal">
+      <div class="terminal-bar">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <span class="terminal-title">sir scan ./my_project</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="t-prompt">→</span> <span class="t-cmd">Scanning 24 files across 3 languages...</span></div>
+        <div><span class="t-prompt">→</span> <span class="t-cmd">147 functions found</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-warn">●</span> <span class="t-out">3 duplicate clusters found</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-match">findMax</span> <span class="t-out">[Java]  →  utils/Math.java:14</span></div>
+        <div><span class="t-match">get_largest</span> <span class="t-out">[Python]  →  helpers.py:42</span></div>
+        <div><span class="t-match">findMax</span> <span class="t-out">[Rust]  →  src/lib.rs:88</span></div>
+        <div>&nbsp;</div>
+        <div><span class="t-out">Health score: </span><span class="t-match">78/100</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how-section reveal" id="how">
+    <div class="section-label">// Alpha equivalence</div>
+    <h2 class="section-title">How it works.</h2>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-title">Translate</div>
+        <div class="step-desc">Any language gets translated to Python first using an LLM. One parser handles 25+ languages.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-title">Canonicalize</div>
+        <div class="step-desc">Variable names, function names, and formatting are stripped. Only pure logical structure remains.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-title">Hash</div>
+        <div class="step-desc">The canonical structure is hashed using SHA-256. Same hash means same logic — guaranteed.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-title">Match</div>
+        <div class="step-desc">Every hash is compared against every other hash. Matching pairs are duplicate functions regardless of language.</div>
+      </div>
+      <div class="step reveal">
+        <div class="step-title">Merge</div>
+        <div class="step-desc">Remove duplicates in one click — auto merge or choose manually. Download cleaned files instantly.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LANGUAGES TICKER -->
+  <section class="langs-section">
+    <div class="langs-scroll" id="langScroll">
+      <span class="lang-pill">Python</span>
+      <span class="lang-pill">JavaScript</span>
+      <span class="lang-pill">TypeScript</span>
+      <span class="lang-pill">Java</span>
+      <span class="lang-pill">Rust</span>
+      <span class="lang-pill">Go</span>
+      <span class="lang-pill">C++</span>
+      <span class="lang-pill">C</span>
+      <span class="lang-pill">C#</span>
+      <span class="lang-pill">Swift</span>
+      <span class="lang-pill">Kotlin</span>
+      <span class="lang-pill">Scala</span>
+      <span class="lang-pill">Ruby</span>
+      <span class="lang-pill">PHP</span>
+      <span class="lang-pill">Haskell</span>
+      <span class="lang-pill">Elixir</span>
+      <span class="lang-pill">Lua</span>
+      <span class="lang-pill">Dart</span>
+      <span class="lang-pill">Julia</span>
+      <span class="lang-pill">Nim</span>
+      <span class="lang-pill">Zig</span>
+      <span class="lang-pill">R</span>
+      <!-- duplicate for seamless loop -->
+      <span class="lang-pill">Python</span>
+      <span class="lang-pill">JavaScript</span>
+      <span class="lang-pill">TypeScript</span>
+      <span class="lang-pill">Java</span>
+      <span class="lang-pill">Rust</span>
+      <span class="lang-pill">Go</span>
+      <span class="lang-pill">C++</span>
+      <span class="lang-pill">C</span>
+      <span class="lang-pill">C#</span>
+      <span class="lang-pill">Swift</span>
+      <span class="lang-pill">Kotlin</span>
+      <span class="lang-pill">Scala</span>
+      <span class="lang-pill">Ruby</span>
+      <span class="lang-pill">PHP</span>
+      <span class="lang-pill">Haskell</span>
+      <span class="lang-pill">Elixir</span>
+      <span class="lang-pill">Lua</span>
+      <span class="lang-pill">Dart</span>
+      <span class="lang-pill">Julia</span>
+      <span class="lang-pill">Nim</span>
+      <span class="lang-pill">Zig</span>
+      <span class="lang-pill">R</span>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features-section reveal" id="features">
+    <div class="section-label">// What's included</div>
+    <h2 class="section-title">Everything you need.</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">🌐</div>
+        <div class="feature-title">Web App</div>
+        <div class="feature-desc">Upload any files, scan instantly in the browser. No install required. Works with Python, JS, TS, and 25+ AI-translated languages.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">CLI Tool</div>
+        <div class="feature-desc">Run <code style="color:var(--accent)">sir scan ./src</code> from any terminal. Strict mode exits with code 1 for CI/CD pipeline integration.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔌</div>
+        <div class="feature-title">VS Code Extension</div>
+        <div class="feature-desc">Scans your workspace as you type. Merge duplicates with a full diff preview before anything changes.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI Translation</div>
+        <div class="feature-desc">Uses Ollama locally (free) or Claude API for cross-language detection. Confidence scoring tells you which results to trust.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">📦</div>
+        <div class="feature-title">Pack & Diff</div>
+        <div class="feature-desc">Export semantic fingerprints of entire codebases as portable JSON. Compare two codebases without sharing source code.</div>
+      </div>
+      <div class="feature-card reveal">
+        <div class="feature-icon">🔒</div>
+        <div class="feature-title">Private by Default</div>
+        <div class="feature-desc">Files are processed in memory and never stored. Run fully locally with Ollama — nothing leaves your machine.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section reveal">
+    <div class="cta-box">
+      <h2 class="cta-title">Start finding duplicates.</h2>
+      <p class="cta-sub">
+        Free, open source, and ready to use.<br>
+        No account required.
+      </p>
+      <div class="cta-links">
+        <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="btn-primary">Open web app</a>
+        <a href="https://github.com/lflin00/SIR-ENGINE" target="_blank" class="btn-secondary">View source</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <span class="footer-logo">SIR_ENGINE</span>
+    <ul class="footer-links">
+      <li><a href="https://github.com/lflin00/SIR-ENGINE" target="_blank">GitHub</a></li>
+      <li><a href="https://github.com/lflin00/SIR-ENGINE/issues" target="_blank">Issues</a></li>
+      <li><a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank">Demo</a></li>
+    </ul>
+    <span class="footer-copy">BSL Licensed · Built by Lucas Flinders</span>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Staggered step reveals
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.style.transitionDelay = `${i * 0.1}s`;
+    });
+
+    document.querySelectorAll('.feature-card').forEach((el, i) => {
+      el.style.transitionDelay = `${i * 0.08}s`;
+    });
+  </script>
+</body>
+</html>
