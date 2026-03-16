@@ -672,6 +672,116 @@
     .t-match { color: var(--accent); }
     .t-warn { color: var(--danger); }
 
+    /* ── PRICING ── */
+    .pricing-section {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 3rem;
+    }
+
+    .pricing-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .pricing-card:hover { border-color: var(--muted); }
+
+    .pricing-card.featured {
+      border-color: var(--accent);
+      box-shadow: 0 0 40px rgba(0,255,136,0.08);
+    }
+
+    .pricing-card.featured::before {
+      content: 'MOST POPULAR';
+      position: absolute;
+      top: -1px; right: 2rem;
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 0.25rem 0.75rem;
+    }
+
+    .pricing-tier {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+    }
+
+    .pricing-price {
+      font-size: 3rem;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+    }
+
+    .pricing-price span {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: var(--muted);
+    }
+
+    .pricing-desc {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 2rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pricing-features {
+      list-style: none;
+      margin-bottom: 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .pricing-features li {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .pricing-features li::before {
+      content: '✓';
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .pricing-features li.muted {
+      color: var(--muted);
+    }
+
+    .pricing-features li.muted::before {
+      content: '—';
+      color: var(--border);
+    }
+
     /* responsive */
     @media (max-width: 700px) {
       nav { padding: 1rem 1.25rem; }
@@ -694,6 +804,7 @@
     <ul class="nav-links">
       <li><a href="#how">How it works</a></li>
       <li><a href="#features">Features</a></li>
+      <li><a href="#pricing">Pricing</a></li>
       <li><a href="https://github.com/lflin00/SIR-ENGINE" target="_blank">GitHub</a></li>
     </ul>
     <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="nav-cta">Live Demo →</a>
@@ -916,17 +1027,59 @@
     </div>
   </section>
 
+  <!-- PRICING -->
+  <section class="pricing-section reveal" id="pricing">
+    <div class="section-label">// Plans</div>
+    <h2 class="section-title">Simple pricing.</h2>
+
+    <div class="pricing-grid">
+
+      <!-- Free -->
+      <div class="pricing-card reveal">
+        <div class="pricing-tier">Free</div>
+        <div class="pricing-price">$0</div>
+        <p class="pricing-desc">Everything you need for open-source and personal projects.</p>
+        <ul class="pricing-features">
+          <li>CLI tool — <code style="color:var(--accent)">sir scan ./src</code></li>
+          <li>Web app (browser-based scanning)</li>
+          <li>VS Code extension</li>
+          <li>Python, JavaScript, TypeScript — native</li>
+          <li>GitHub Action on public repositories</li>
+          <li class="muted">GitHub Action on private repositories</li>
+          <li class="muted">AI scan in CI (Java, Go, Rust, C# + 20 more)</li>
+        </ul>
+        <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="btn-secondary" style="display:block;text-align:center;">Try the demo</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="pricing-card featured reveal">
+        <div class="pricing-tier">Pro</div>
+        <div class="pricing-price">$79 <span>/ year</span></div>
+        <p class="pricing-desc">Automatic duplicate detection on every pull request in private repositories.</p>
+        <ul class="pricing-features">
+          <li>Everything in Free</li>
+          <li>GitHub Action on <strong>private repositories</strong></li>
+          <li>Strict mode — block merges until duplicates are resolved</li>
+          <li>AI scan in CI — detect duplicates across 25+ languages</li>
+          <li>1-year license, unlimited repos, unlimited scans</li>
+        </ul>
+        <a href="https://buy.stripe.com/cNi28t4Af8OUfyH6hsasg01" target="_blank" class="btn-primary" style="display:block;text-align:center;">Get license →</a>
+      </div>
+
+    </div>
+  </section>
+
   <!-- CTA -->
   <section class="cta-section reveal">
     <div class="cta-box">
       <h2 class="cta-title">Start finding duplicates.</h2>
       <p class="cta-sub">
-        Free, open source, and ready to use.<br>
-        No account required.
+        Free to try. No account required.<br>
+        Upgrade for private repo CI/CD.
       </p>
       <div class="cta-links">
-        <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="btn-primary">Open web app</a>
-        <a href="https://github.com/lflin00/SIR-ENGINE" target="_blank" class="btn-secondary">View source</a>
+        <a href="https://sri-engine-7amwtce7a23k7q34cpnxem.streamlit.app" target="_blank" class="btn-primary">Try the demo</a>
+        <a href="#pricing" class="btn-secondary">View pricing</a>
       </div>
     </div>
   </section>
